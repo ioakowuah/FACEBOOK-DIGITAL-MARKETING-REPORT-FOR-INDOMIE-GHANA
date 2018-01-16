@@ -1,0 +1,198 @@
+---
+title: "INDOMIE FACEBOOK PAGE DYNAMICS REPORT"
+author: "ISAAC OWUSU AKOWUAH"
+date: "January 6, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+**MULTIPRO PRIVATE LIMITED** is a sales and marketing company concerned with noodle, kellogs, pasta and chinchin products. As part of their digital marketing approach, they host a Facebook page to engage their customers and also target consumers. This seeks to analyse their data generated on their page from January 2017 to December 2017.
+```{r cars, echo= TRUE, message=FALSE}
+##############
+######Packages Required
+#############
+library("Rfacebook")
+library("stringr")
+library("reshape2")
+library("ggplot2")
+library("scales")
+#library("cowplot")
+###########
+####Loading Scrapped Data
+load("Yummie.RData")
+load("Indomie_Ghana.RData")
+```
+
+### 1. What is the trend of likes, comments and shares for Indomie_Ghana?
+
+```{r cas, echo= TRUE, message=FALSE}
+format.facebook.date<-function(datestring){
+  date<-as.POSIXct(datestring,format="%Y-%m-%dT%H:%M:%S+0000",tz="GMT")
+}
+
+aggregate.metric<-function(metric){
+  m<-aggregate(Indomie_Ghana[[paste0(metric,"_count")]],list(month=Indomie_Ghana$month),mean)
+  m$month<-as.Date(paste0(m$month,"-15"))
+  m$metric<-metric
+  return(m)
+}
+
+Indomie_Ghana$datetime<-format.facebook.date(Indomie_Ghana$created_time)
+Indomie_Ghana$month<-format(Indomie_Ghana$datetime,"%Y-%m")
+df.List<-lapply(c("likes","comments","shares"),aggregate.metric)
+df<-do.call(rbind,df.List)
+
+
+t<-ggplot(df,aes(x=month,y=x,group=metric))+geom_line(aes(color=metric))+scale_x_date(date_breaks = "months",labels = date_format("%m"))+theme_bw()+theme(axis.title.x = element_blank())+labs(y="Average count per post",title=("INDOMIE MONTHLY AVERAGE PAGE REACTION TREND"),caption="Data Source: Facebook_Indomie_Ghana")+ylim(0,6000)
+t
+```
+
+### 2. What is the likes, comments and shares trend for Yummie?
+```{r ca, echo= TRUE, message=FALSE}
+format.facebook.date<-function(datestring){
+  date<-as.POSIXct(datestring,format="%Y-%m-%dT%H:%M:%S+0000",tz="GMT")
+}
+
+aggregate.metric<-function(metric){
+  m<-aggregate(Yummie[[paste0(metric,"_count")]],list(month=Yummie$month),mean)
+  m$month<-as.Date(paste0(m$month,"-15"))
+  m$metric<-metric
+  return(m)
+}
+
+Yummie$datetime<-format.facebook.date(Yummie$created_time)
+Yummie$month<-format(Yummie$datetime,"%Y-%m")
+df.List<-lapply(c("likes","comments","shares"),aggregate.metric)
+df<-do.call(rbind,df.List)
+
+n<-ggplot(df,aes(x=month,y=x,group=metric))+geom_line(aes(color=metric))+scale_x_date(date_breaks = "months",labels = date_format("%m"))+theme_bw()+theme(axis.title.x = element_blank())+labs(y="Average count per post",title=("YUMMIE MONTHLY AVERAGE PAGE REACTION TREND"),caption="Data Source: Facebook_Yummie")
+n
+
+#plot_grid(t,n, labels = "AUTO")
+```
+
+### 3. Which post generated maximum likes count?
+```{r caTT, echo= TRUE, message=FALSE}
+Indomie_Ghana[which.max(Indomie_Ghana$likes_count),]
+```
+
+### 4 .Which post generated maximum likes count greater than 10000?
+```{r caTTji, echo= TRUE, message=FALSE}
+which(Indomie_Ghana$likes_count>=10000)
+Indomie_Ghana[244,]
+Indomie_Ghana[245,]
+Indomie_Ghana[246,]
+Indomie_Ghana[247,]
+```
+
+### 5. Which post generated maximum comments count?
+```{r caTTer, echo= TRUE, message=FALSE}
+Indomie_Ghana[which.max(Indomie_Ghana$comments_count),]
+```
+
+### 6. Which post generated maximum shares count?
+```{r caTTergh, echo= TRUE, message=FALSE}
+Indomie_Ghana[which.max(Indomie_Ghana$shares_count),]
+```
+### 7. What post by competitor generated many likes count?
+```{r TT, echo= TRUE, message=FALSE}
+Yummie[which.max(Yummie$likes_count),]
+```
+### 8. What post by competitor generated many comments count?
+```{r TTq, echo= TRUE, message=FALSE}
+Yummie[which.max(Yummie$comments_count),]
+```
+### 9. What post by competitor generated many shares count?
+```{r TTqr, echo= TRUE, message=FALSE}
+Yummie[which.max(Yummie$shares_count),]
+```
+
+### 10. What post type is most observed on Indomie Page?
+```{r TTY, echo= TRUE, message=FALSE}
+names(Yummie)[5]<-"Post_Type"
+names(Indomie_Ghana)[5]<-"Post_Type"
+Indomieplot<-ggplot(Indomie_Ghana,aes(x=Post_Type,fill=Post_Type))+geom_bar(position = "dodge")
+Indomieplot+ labs(title="INDOMIE POST TYPE", y="Number of Posts", x="Post Type", caption="Data Source: Facebook_Indomie_Ghana")
+```
+
+### 11. How does Indomie Post compare with the competitor Yummie post?
+
+```{r TTP, echo= TRUE, message=FALSE}
+index<-c(2,4,5,8,9,10)
+data<-rbind(Indomie_Ghana[,index],Yummie[,index])
+names(data)[1]<-"Page"
+ggplot(data,aes(x=Post_Type,fill=Page))+geom_bar(position = "dodge")+ labs(title="INDOMIE AND YUMMIE POST TYPE COMPARISON", y="Number of Posts", x="Post Type", caption="Data Source: Facebook")
+```
+
+### 12. What is the trend of Engagement of Indomie and Yummie for the year?
+**Engagement is the total likes, comments and shares count**
+```{r TTD, echo= TRUE, message=FALSE}
+Noodle<-rbind(Indomie_Ghana,Yummie)
+Noodle$Engagement<-(Noodle$likes_count+Noodle$comments_count+Noodle$shares_count)
+ggplot(subset(Noodle,Noodle$from_name %in% c("Indomie Ghana","Yum-mie")),aes(x=as.Date(Noodle$created_time),y=Noodle$Engagement,color=Noodle$from_name))+geom_step()+labs(caption = "(Based on Facebook Data  from JAN 2017 - DEC 2017)",title = "POST ENGAGEMENT OVER TIME ",x="Post Date",y="Engagement",colour="NOODLE BRAND")
+```
+
+### 13. How likely is Yummie to post ahead of Indomie**
+```{r TTX, echo= TRUE, message=FALSE}
+(nrow(Yummie)/nrow(Indomie_Ghana))
+```
+### 14. What is the percentage difference in post by Indomie and Yummie?
+```{r TTF, echo= TRUE, message=FALSE}
+a=nrow(Yummie)/(nrow(Yummie)+nrow(Indomie_Ghana))*100
+
+b=nrow(Indomie_Ghana)/(nrow(Yummie)+nrow(Indomie_Ghana))*100
+
+a-b
+```
+
+### 15. What is the comparative post per month for Indomie and Yummie?
+```{r HHG, echo= TRUE, message=FALSE}
+Noodle$Month<-as.Date(Noodle$created_time)
+Noodle$mon<-as.numeric(format(Noodle$Month,format="%m"))
+save(Noodle,file ="Noodle.RData")
+Noodle$mon[Noodle$mon==1]<-"Jan"
+Noodle$mon[Noodle$mon==2]<-"Feb"
+Noodle$mon[Noodle$mon==3]<-"Mar"
+Noodle$mon[Noodle$mon==4]<-"Apr"
+Noodle$mon[Noodle$mon==5]<-"May"
+Noodle$mon[Noodle$mon==6]<-"Jun"
+Noodle$mon[Noodle$mon==7]<-"Jul"
+Noodle$mon[Noodle$mon==8]<-"Aug"
+Noodle$mon[Noodle$mon==9]<-"Sep"
+Noodle$mon[Noodle$mon==10]<-"Oct"
+Noodle$mon[Noodle$mon==11]<-"Nov"
+Noodle$mon[Noodle$mon==12]<-"Dec"
+names(Noodle)[2]<-"Noodle_Page"
+Noodle$mon<-factor(Noodle$mon,levels = c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"))
+ggplot(Noodle,aes(x=mon,fill=Noodle_Page))+geom_bar(position = "dodge")+scale_x_discrete(limits=c("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"))+labs(title="INDOMIE AND YUMMIE MONTHLY POST COMPARISON", y="Number of Posts", x="Month", caption="Data Source: Facebook")
+```
+
+### 16. What is the average post per month for Indomie and Yummie?
+```{r HHDF, echo= TRUE, message=FALSE}
+#Yummie average post per month
+nrow(Yummie)/12
+#Indomie average post per month
+nrow(Indomie_Ghana)/12
+dat = data.frame(count=c(26, 36), Noodle_Brand=c("Indomie_Ghana", "Yummie"))
+
+# Add addition columns, needed for drawing with geom_rect.
+dat$fraction = dat$count / sum(dat$count)
+dat = dat[order(dat$fraction), ]
+dat$ymax = cumsum(dat$fraction)
+dat$ymin = c(0, head(dat$ymax, n=-1))
+
+# Make the plot
+p1 = ggplot(dat, aes(fill=Noodle_Brand, ymax=ymax, ymin=ymin, xmax=4, xmin=3)) +
+  geom_rect() +
+  coord_polar(theta="y") +
+  xlim(c(0, 4)) +
+  theme(panel.grid=element_blank()) +
+  theme(axis.text=element_blank()) +
+  theme(axis.ticks=element_blank()) +
+  labs(title="AVERAGE POST PER MONTH")
+p1
+```
+
+
